@@ -3,7 +3,7 @@
 #include <sys/alt_alarm.h>
 #include <alt_types.h>
 
-#define CALLBACK_TIME 5
+#define CALLBACK_TIME 30
 
 
 /* The function below takes two arguments: value which is the value in decimal
@@ -68,6 +68,10 @@ int main(void)
 	InitialState:
 	while((*switches != 0) || (price == 0) || *switches == 512)
 	{
+		if(*switches == 1)
+		{
+			price = 0;
+		}
 		if(*pushButtons == 8)
 		{
 			price = *switches-(512);
@@ -93,16 +97,23 @@ int main(void)
 					 usleep(2000000);
 				}
 		*hex3_hex0 = NULL;    //change this to blank
-		if(*switches == 256)
+		if(price > 0 && *switches == 0)
+		{
+			printf("price is %d",price);
 			goto Setup;
-
+		}
 	}
 
 	Setup:
-	while(products == 0 || *switches != 0 || *switches == 0)
+	while(products == 0 || *switches != 0)
 	{
+		fixer:
+		usleep(50000);
+
 		if(*pushButtons == 8)
 		{
+			if(*switches == 0)
+				goto fixer;
 			products = *switches-256;
 			printf("this is a test for products %d\n",products);
 			usleep(50000);
@@ -110,7 +121,7 @@ int main(void)
 			*hex3_hex0 = displayed;
 
 		}
-		if(products >= 0 && *switches == 0)
+		if(products > 0 && *switches == 0)
 			goto Start;
 
 
@@ -120,6 +131,7 @@ int main(void)
 	*redLED = 0;
 	while(products >= 0)
 	{
+
 		printf("number of products %d\n",products);
 		if(products == 0)
 		{
@@ -128,9 +140,13 @@ int main(void)
 		/* YOU NEED TO ADD CODE IN THIS WHILE LOOP TO PERFORM THE
 		 * SPECIFIED FUNCTIONALITIES.
 		 */
-
 		displayed = HEX3to0_display(products,table);
 		*hex3_hex0 = displayed;
+
+		while(*switches == 0)
+		{
+			*greenLED = 0;
+			*redLED = 0;
 
 		 if(*pushButtons == 2){
 			 displayed = HEX3to0_display(5,table);
@@ -152,7 +168,17 @@ int main(void)
 			deposit_sum += 25;
 			global_flag = 1;
 			usleep(1000000);
+
+
+
 		 }
+		 if(deposit_sum > 0)
+		 {
+		 displayed = HEX3to0_display(deposit_sum,table);
+		 *hex3_hex0 = displayed;
+		 usleep(150000);
+		}
+		}
 		while(*switches == 1)
 		{
 			if( deposit_sum < price )
@@ -160,18 +186,19 @@ int main(void)
 			{
 
 				*redLED = 1;
-				displayed = HEX3to0_display(0,table);
+				displayed = HEX3to0_display(deposit_sum,table);
 				*hex3_hex0 = displayed;
+
 
 				if(*pushButtons == 8 )
 				{
+
 					deposit_sum = 0;
-					displayed = HEX3to0_display(0,table);
+					displayed = HEX3to0_display(deposit_sum,table);
 					*hex3_hex0 = displayed;
 					*redLED = 0;
 					goto Start;
 				}
-				usleep(1000000);
 
 			}
 
@@ -193,17 +220,19 @@ int main(void)
 						}
 						else
 						{
-							goto Setup;
+							*hex3_hex0 = NULL;
+							deposit_sum = 0;
+							price = 0;
+							products = 0;
+							*greenLED = 0;
+							goto InitialState;
 						}
 					}
 				}
 
 		}
-		displayed = HEX3to0_display(deposit_sum,table);
+		displayed = HEX3to0_display(products,table);
 		*hex3_hex0 = displayed;
-
-		usleep(150000);
-
 	}
 	}
 }
